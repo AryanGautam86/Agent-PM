@@ -1,4 +1,7 @@
-# Agent-PM — Delivery Steward
+# Agent-PM — Delivery Steward 
+
+## https://agent-pm-api.onrender.com [backend]
+## https://agent-pm-tau.vercel.app [frontend]
 
 An AI project-management agent that acts as a delivery steward for a services pod:
 twice-daily standup posts, RAID log stewardship, action-item tracking, and
