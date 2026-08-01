@@ -20,6 +20,7 @@ import {
 } from '@/features/action_items/api'
 import { fromDateInput } from '@/features/action_items/dates'
 import { summarise } from '@/features/action_items/progress'
+import { usePermissions } from '@/features/auth/usePermissions'
 import { useArchiveEngagement } from '@/features/engagements/api'
 import type { Engagement } from '@/types/api'
 
@@ -41,6 +42,7 @@ export function ProjectSection({
   const update = useUpdateActionItem(engagement.id)
   const remove = useDeleteActionItem(engagement.id)
   const archive = useArchiveEngagement()
+  const { canModify } = usePermissions()
 
   const progress = summarise(items.data ?? [])
   const tone =
@@ -101,6 +103,7 @@ export function ProjectSection({
         </span>
       </button>
 
+      {canModify && (
       <button
         type="button"
         className="icon-btn project-remove"
@@ -122,6 +125,7 @@ export function ProjectSection({
       >
         ✕
       </button>
+      )}
 
       <div className={`progress-track progress-${tone} project-bar`}>
         <div className="progress-fill" style={{ width: `${progress.percent}%` }} />
@@ -129,6 +133,7 @@ export function ProjectSection({
 
       {open && (
         <div className="project-body">
+          {canModify && (
           <div className="project-actions">
             <Button
               variant={adding ? 'ghost' : 'primary'}
@@ -138,8 +143,9 @@ export function ProjectSection({
               {adding ? 'Cancel' : '+ Add task'}
             </Button>
           </div>
+          )}
 
-          {adding && (
+          {adding && canModify && (
             <form className="inline-form project-add-form" onSubmit={handleAdd}>
               <input
                 type="text"
@@ -181,7 +187,7 @@ export function ProjectSection({
             <ErrorState error={items.error} onRetry={() => void items.refetch()} />
           ) : (items.data?.length ?? 0) === 0 ? (
             <p className="muted">
-              No tasks yet. Use <strong>+ Add task</strong>, or they arrive
+              No tasks yet.{canModify && ' Use + Add task.'} They also arrive
               automatically from meeting outcomes.
             </p>
           ) : (
@@ -203,6 +209,7 @@ export function ProjectSection({
                       key={item.id}
                       item={item}
                       busy={update.isPending || remove.isPending}
+                      readOnly={!canModify}
                       onPatch={(patch) => update.mutate({ itemId: item.id, patch })}
                       onDelete={() => remove.mutate(item.id)}
                     />

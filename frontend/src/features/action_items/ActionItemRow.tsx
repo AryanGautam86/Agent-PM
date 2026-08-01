@@ -9,14 +9,18 @@ const STATUSES: ActionItemStatus[] = ['open', 'in_progress', 'done', 'cancelled'
 export function ActionItemRow({
   item,
   busy,
+  readOnly = false,
   onPatch,
   onDelete,
 }: {
   item: ActionItem
   busy: boolean
+  /** Non-admins see the row but cannot change it. */
+  readOnly?: boolean
   onPatch: (patch: Partial<ActionItem>) => void
   onDelete: () => void
 }) {
+  const locked = busy || readOnly
   return (
     <tr className={item.is_overdue ? 'row-danger' : undefined}>
       <td>
@@ -34,7 +38,7 @@ export function ActionItemRow({
           className="date-cell"
           aria-label={`Due date for ${item.title}`}
           value={toDateInput(item.due_at)}
-          disabled={busy}
+          disabled={locked}
           onChange={(event) => onPatch({ due_at: fromDateInput(event.target.value) })}
         />
         {item.due_at && (
@@ -53,7 +57,7 @@ export function ActionItemRow({
           className="status-cell"
           aria-label={`Status of ${item.title}`}
           value={item.status}
-          disabled={busy}
+          disabled={locked}
           onChange={(event) =>
             onPatch({ status: event.target.value as ActionItemStatus })
           }
@@ -78,23 +82,24 @@ export function ActionItemRow({
 
       <td>
         <div className="row-actions">
-          {item.status !== 'done' ? (
+          {item.status !== 'done' && !readOnly ? (
             <Button
               size="sm"
-              disabled={busy}
+              disabled={locked}
               onClick={() => onPatch({ status: 'done' })}
             >
               Done
             </Button>
-          ) : (
+          ) : item.status === 'done' ? (
             <StatusBadge value="done" />
-          )}
+          ) : null}
+          {!readOnly && (
           <button
             type="button"
             className="icon-btn"
             title={`Remove "${item.title}"`}
             aria-label={`Remove ${item.title}`}
-            disabled={busy}
+            disabled={locked}
             onClick={() => {
               // Deleting is irreversible and the row is small — a stray click
               // should not silently destroy someone's task.
@@ -103,6 +108,7 @@ export function ActionItemRow({
           >
             ✕
           </button>
+          )}
         </div>
       </td>
     </tr>

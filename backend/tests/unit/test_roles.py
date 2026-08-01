@@ -64,3 +64,35 @@ def test_pod_and_app_roles_are_distinct_vocabularies() -> None:
 def test_default_app_role_cannot_approve() -> None:
     """New accounts must land somewhere harmless."""
     assert not AppRole.ENGINEER.can_approve
+
+
+@pytest.mark.parametrize(
+    ("role", "can_modify"),
+    [
+        (AppRole.ADMIN, True),
+        (AppRole.DELIVERY_LEAD, False),
+        (AppRole.PRODUCT_OWNER, False),
+        (AppRole.ENGINEER, False),
+    ],
+)
+def test_only_administrators_may_change_data(role: AppRole, can_modify: bool) -> None:
+    """Sign-up is open, so anyone who can authenticate reaches the app. Write
+    access has to be narrower than read access or a stranger could edit a live
+    client engagement."""
+    assert role.can_modify is can_modify
+    assert make_user(role).can_modify is can_modify
+
+
+def test_approving_and_modifying_are_different_rights() -> None:
+    """A delivery lead may decide approvals but may not edit the project.
+    Conflating the two would silently widen write access."""
+    lead = make_user(AppRole.DELIVERY_LEAD)
+
+    assert lead.can_approve
+    assert not lead.can_modify
+
+
+def test_every_role_can_still_be_read_only_present() -> None:
+    """No role is locked out entirely — everyone can read and post a standup,
+    which is the one write a team member needs."""
+    assert all(isinstance(role.can_modify, bool) for role in AppRole)

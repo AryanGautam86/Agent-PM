@@ -15,9 +15,11 @@ import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState, ErrorState } from '@/components/ui/States'
 import { ProjectSection } from '@/features/action_items/ProjectSection'
 import { toSlug, useCreateEngagement } from '@/features/engagements/api'
+import { usePermissions } from '@/features/auth/usePermissions'
 import { useEngagements } from '@/hooks/useEngagements'
 
 export function ActionItemsPage() {
+  const { canModify } = usePermissions()
   const engagements = useEngagements()
   const create = useCreateEngagement()
 
@@ -52,12 +54,14 @@ export function ActionItemsPage() {
             nudged before a task is due and escalated once overdue.
           </p>
         </div>
-        <Button variant="primary" onClick={() => setAdding((value) => !value)}>
-          {adding ? 'Cancel' : '+ New project'}
-        </Button>
+        {canModify && (
+          <Button variant="primary" onClick={() => setAdding((value) => !value)}>
+            {adding ? 'Cancel' : '+ New project'}
+          </Button>
+        )}
       </header>
 
-      {adding && (
+      {adding && canModify && (
         <Card title="New project">
           <form className="inline-form" onSubmit={handleCreate}>
             <input
@@ -107,9 +111,11 @@ export function ActionItemsPage() {
           title="No projects yet"
           hint="Create one to start tracking tasks."
           action={
-            <Button variant="primary" onClick={() => setAdding(true)}>
-              + New project
-            </Button>
+            canModify ? (
+              <Button variant="primary" onClick={() => setAdding(true)}>
+                + New project
+              </Button>
+            ) : undefined
           }
         />
       ) : (

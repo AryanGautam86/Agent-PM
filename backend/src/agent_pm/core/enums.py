@@ -30,6 +30,20 @@ class AppRole(StrEnum):
         """Whether this role may decide human-in-the-loop approvals."""
         return self in {AppRole.ADMIN, AppRole.DELIVERY_LEAD, AppRole.PRODUCT_OWNER}
 
+    @property
+    def can_modify(self) -> bool:
+        """Whether this role may change anything beyond posting a standup.
+
+        Only administrators. Everyone else is read-only apart from writing
+        their own standup, which is the one thing a team member needs to do
+        day to day.
+
+        Deliberately narrow: sign-up is open, so anybody who can authenticate
+        would otherwise be able to edit a live client engagement. Widening this
+        is a one-line change here rather than an audit of every route.
+        """
+        return self is AppRole.ADMIN
+
 
 class PodRole(StrEnum):
     PRODUCT_OWNER = "product_owner"

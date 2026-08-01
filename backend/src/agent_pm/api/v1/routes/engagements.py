@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, status
 
-from agent_pm.api.deps import CurrentUserDep, DbSession
+from agent_pm.api.deps import CurrentUserDep, DbSession, EditorUserDep
 from agent_pm.schemas.auth import MemberCreate, MemberRead
 from agent_pm.schemas.common import Acknowledgement
 from agent_pm.schemas.engagement import (
@@ -47,7 +47,7 @@ async def list_summaries(
     summary="Create an engagement",
 )
 async def create_engagement(
-    payload: EngagementCreate, user: CurrentUserDep, session: DbSession
+    payload: EngagementCreate, user: EditorUserDep, session: DbSession
 ) -> EngagementRead:
     engagement = await EngagementService(session).create(payload, user)
     return EngagementRead.from_model(engagement)
@@ -75,7 +75,7 @@ async def get_engagement(
 async def update_engagement(
     engagement_id: uuid.UUID,
     payload: EngagementUpdate,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> EngagementRead:
     engagement = await EngagementService(session).update(engagement_id, payload, user)
@@ -86,7 +86,7 @@ async def update_engagement(
     "/{engagement_id}", response_model=Acknowledgement, summary="Archive a project"
 )
 async def archive_engagement(
-    engagement_id: uuid.UUID, user: CurrentUserDep, session: DbSession
+    engagement_id: uuid.UUID, user: EditorUserDep, session: DbSession
 ) -> Acknowledgement:
     """Hides the project everywhere without deleting it.
 
@@ -121,7 +121,7 @@ async def list_members(
 async def add_member(
     engagement_id: uuid.UUID,
     payload: MemberCreate,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> MemberRead:
     membership = await EngagementService(session).add_member(engagement_id, payload, user)
@@ -136,7 +136,7 @@ async def add_member(
 async def remove_member(
     engagement_id: uuid.UUID,
     member_user_id: uuid.UUID,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> Acknowledgement:
     await EngagementService(session).remove_member(engagement_id, member_user_id, user)

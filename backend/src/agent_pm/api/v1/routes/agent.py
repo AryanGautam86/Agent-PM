@@ -7,7 +7,7 @@ import uuid
 from fastapi import APIRouter, Query
 
 from agent_pm.agents.registry import describe_catalog, get_task
-from agent_pm.api.deps import CurrentUserDep, DbSession, PaginationDep
+from agent_pm.api.deps import CurrentUserDep, DbSession, EditorUserDep, PaginationDep
 from agent_pm.core.enums import RunStatus
 from agent_pm.repositories.run import AgentRunRepository
 from agent_pm.schemas.agent import (
@@ -69,7 +69,7 @@ async def run_task(
     engagement_id: uuid.UUID,
     task_name: str,
     payload: TaskRunRequest,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> TaskRunResponse:
     """Manual invocation, for testing a task's behaviour on real data.

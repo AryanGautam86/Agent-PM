@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Query, status
 
-from agent_pm.api.deps import CurrentUserDep, DbSession, PaginationDep
+from agent_pm.api.deps import CurrentUserDep, DbSession, EditorUserDep, PaginationDep
 from agent_pm.core.enums import StandupKind
 from agent_pm.schemas.agent import StandupCreate, StandupGenerateRequest, StandupRead
 from agent_pm.schemas.common import Acknowledgement
@@ -62,7 +62,7 @@ async def create_standup(
 async def delete_standup(
     engagement_id: uuid.UUID,
     standup_id: uuid.UUID,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> Acknowledgement:
     await StandupService(session).delete(engagement_id, standup_id, user)
@@ -75,7 +75,7 @@ async def delete_standup(
 async def generate_morning(
     engagement_id: uuid.UUID,
     payload: StandupGenerateRequest,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> StandupRead:
     """Idempotent for a given date unless ``force_regenerate`` is set."""
@@ -91,7 +91,7 @@ async def generate_morning(
 async def generate_eod(
     engagement_id: uuid.UUID,
     payload: StandupGenerateRequest,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> StandupRead:
     standup, _ = await StandupService(session).generate(
