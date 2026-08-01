@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Query
 
-from agent_pm.api.deps import CurrentUserDep, DbSession, PaginationDep
+from agent_pm.api.deps import CurrentUserDep, DbSession, EditorUserDep, PaginationDep
 from agent_pm.core.enums import ReportKind
 from agent_pm.schemas.report import ReportGenerateRequest, ReportRead, ReportUpdate
 from agent_pm.services.report_service import ReportService
@@ -45,7 +45,7 @@ async def get_report(
 async def generate_weekly_status(
     engagement_id: uuid.UUID,
     payload: ReportGenerateRequest,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> ReportRead:
     """Routes to the narrative model and creates an approval for the lead."""
@@ -63,7 +63,7 @@ async def generate_weekly_status(
 async def generate_planning_pack(
     engagement_id: uuid.UUID,
     payload: ReportGenerateRequest,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> ReportRead:
     report = await ReportService(session).generate(
@@ -77,7 +77,7 @@ async def update_report(
     engagement_id: uuid.UUID,
     report_id: uuid.UUID,
     payload: ReportUpdate,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> ReportRead:
     report = await ReportService(session).update(engagement_id, report_id, payload, user)
@@ -88,7 +88,7 @@ async def update_report(
 async def mark_sent(
     engagement_id: uuid.UUID,
     report_id: uuid.UUID,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> ReportRead:
     report = await ReportService(session).mark_sent(engagement_id, report_id, user)

@@ -4,7 +4,7 @@ import uuid
 
 from fastapi import APIRouter, Query, status
 
-from agent_pm.api.deps import CurrentUserDep, DbSession, PaginationDep
+from agent_pm.api.deps import CurrentUserDep, DbSession, EditorUserDep, PaginationDep
 from agent_pm.core.enums import ActionItemStatus
 from agent_pm.schemas.action_item import (
     ActionItemCreate,
@@ -43,7 +43,7 @@ async def list_action_items(
 async def create_action_item(
     engagement_id: uuid.UUID,
     payload: ActionItemCreate,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> ActionItemRead:
     service = ActionItemService(session)
@@ -58,7 +58,7 @@ async def update_action_item(
     engagement_id: uuid.UUID,
     item_id: uuid.UUID,
     payload: ActionItemUpdate,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> ActionItemRead:
     service = ActionItemService(session)
@@ -72,7 +72,7 @@ async def update_action_item(
 async def delete_action_item(
     engagement_id: uuid.UUID,
     item_id: uuid.UUID,
-    user: CurrentUserDep,
+    user: EditorUserDep,
     session: DbSession,
 ) -> Acknowledgement:
     """Removes it permanently. To keep a record that the work existed but was
@@ -87,7 +87,7 @@ async def delete_action_item(
     summary="Run the nudge and escalation sweep now",
 )
 async def nudge_sweep(
-    engagement_id: uuid.UUID, user: CurrentUserDep, session: DbSession
+    engagement_id: uuid.UUID, user: EditorUserDep, session: DbSession
 ) -> NudgeSweepResponse:
     """Normally scheduled hourly; exposed for testing the cadence manually."""
     await EngagementService(session).require_access(engagement_id, user)

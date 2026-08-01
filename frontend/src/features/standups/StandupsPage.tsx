@@ -12,6 +12,7 @@ import {
   useStandups,
 } from '@/features/standups/api'
 import { WriteStandup } from '@/features/standups/WriteStandup'
+import { usePermissions } from '@/features/auth/usePermissions'
 import { useSelectedEngagement } from '@/hooks/useEngagements'
 import { formatDate, relativeTime } from '@/lib/format'
 import type { StandupKind } from '@/types/api'
@@ -29,6 +30,7 @@ export function StandupsPage() {
   const standups = useStandups(engagementId, kind)
   const generate = useGenerateStandup(engagementId)
   const remove = useDeleteStandup(engagementId)
+  const { canModify } = usePermissions()
 
   return (
     <div className="page">
@@ -39,6 +41,7 @@ export function StandupsPage() {
             Posted automatically at the engagement&rsquo;s configured times.
           </p>
         </div>
+        {canModify && (
         <div className="page-actions">
           <Button
             variant="primary"
@@ -56,6 +59,7 @@ export function StandupsPage() {
             Regenerate EOD
           </Button>
         </div>
+        )}
       </header>
 
       <WriteStandup engagementId={engagementId} />
@@ -103,6 +107,7 @@ export function StandupsPage() {
                     <Badge tone="muted">agent</Badge>
                   )}
                   <StatusBadge value={standup.status} />
+                  {canModify && (
                   <button
                     type="button"
                     className="icon-btn"
@@ -117,6 +122,7 @@ export function StandupsPage() {
                   >
                     ✕
                   </button>
+                  )}
                 </div>
               }
               accent={standup.blockers.length > 0 ? 'warning' : 'default'}

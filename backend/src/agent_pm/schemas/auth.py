@@ -33,6 +33,10 @@ class CurrentUser(BaseModel):
         return self.role.can_approve
 
     @property
+    def can_modify(self) -> bool:
+        return self.role.can_modify
+
+    @property
     def is_admin(self) -> bool:
         return self.role is AppRole.ADMIN
 

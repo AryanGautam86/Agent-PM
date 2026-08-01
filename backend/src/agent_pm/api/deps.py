@@ -120,6 +120,26 @@ async def require_admin(user: CurrentUserDep) -> CurrentUser:
 AdminUserDep = Annotated[CurrentUser, Depends(require_admin)]
 
 
+async def require_editor(user: CurrentUserDep) -> CurrentUser:
+    """Gate for anything that changes data.
+
+    One dependency guarding every mutating route, so permission is a property
+    of the endpoint rather than something each handler has to remember. Posting
+    a standup is the deliberate exception — it uses ``CurrentUserDep`` instead,
+    because a team member writing their own update is the normal case.
+    """
+    if not user.can_modify:
+        raise AuthorizationError(
+            "Only an administrator can change this. You can still read "
+            "everything and post standups.",
+            details={"role": user.role.value},
+        )
+    return user
+
+
+EditorUserDep = Annotated[CurrentUser, Depends(require_editor)]
+
+
 class Pagination:
     def __init__(
         self,

@@ -112,6 +112,7 @@ export function TeamPage() {
         )}
       </Card>
 
+      {isAdmin && (
       <Card title="Add someone to the pod">
         <form className="inline-form" onSubmit={handleAdd}>
           <input
@@ -143,6 +144,14 @@ export function TeamPage() {
           add.
         </p>
       </Card>
+      )}
+
+      {!isAdmin && (
+        <p className="alert alert-info">
+          You have read access. Only an administrator can change projects,
+          tasks, members or reports — but you can post standups.
+        </p>
+      )}
 
       {(removeMember.isError || setAppRole.isError) && (
         <ErrorState error={removeMember.error ?? setAppRole.error} />
@@ -207,7 +216,7 @@ export function TeamPage() {
                         : 'never signed in'}
                     </td>
                     <td>
-                      {member.user_id !== user?.id && (
+                      {member.user_id !== user?.id && isAdmin && (
                         <Button
                           size="sm"
                           variant="ghost"

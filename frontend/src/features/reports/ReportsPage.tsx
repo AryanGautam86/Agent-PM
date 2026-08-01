@@ -19,6 +19,7 @@ import {
   useReports,
   useUpdateReport,
 } from '@/features/reports/api'
+import { usePermissions } from '@/features/auth/usePermissions'
 import { useSelectedEngagement } from '@/hooks/useEngagements'
 import { formatDate } from '@/lib/format'
 
@@ -29,6 +30,7 @@ export function ReportsPage() {
   const generate = useGenerateReport(engagementId)
   const update = useUpdateReport(engagementId)
   const markSent = useMarkReportSent(engagementId)
+  const { canModify } = usePermissions()
 
   return (
     <div className="page">
@@ -40,6 +42,7 @@ export function ReportsPage() {
             it.
           </p>
         </div>
+        {canModify && (
         <div className="page-actions">
           <Button
             variant="primary"
@@ -55,6 +58,7 @@ export function ReportsPage() {
             Draft planning pack
           </Button>
         </div>
+        )}
       </header>
 
       {generate.isError && <ErrorState error={generate.error} />}
@@ -88,6 +92,7 @@ export function ReportsPage() {
             >
               <Markdown source={report.content_markdown} />
 
+              {canModify && (
               <div className="inline-actions">
                 {report.status === 'draft' && (
                   <Button
@@ -130,6 +135,7 @@ export function ReportsPage() {
                   </>
                 )}
               </div>
+              )}
 
               <footer className="card-footnote muted">
                 {report.citations.length} citation
