@@ -179,12 +179,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [resolvingUrlAuth, session])
 
   const value = useMemo<AuthContextValue>(() => {
+    // Waiting on the profile probe is only justified when a session exists.
+    //
+    // With no session the answer is already known — the visitor is anonymous —
+    // and blocking on the API means a cold-starting backend hides the login
+    // page behind a spinner. On a free host that is ~50 seconds of looking
+    // broken. The probe still runs, and flips this to authenticated if the
+    // server recognises the caller anyway (the local dev bypass).
     const status: AuthContextValue['status'] =
-      !ready || profileLoading || resolvingUrlAuth
+      !ready || resolvingUrlAuth
         ? 'loading'
         : user
           ? 'authenticated'
-          : 'anonymous'
+          : session && profileLoading
+            ? 'loading'
+            : 'anonymous'
 
     return {
       session,
