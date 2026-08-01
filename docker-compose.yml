@@ -1,0 +1,31 @@
+# Local Postgres, for developing without a Supabase project.
+#
+# Supabase is still needed for authentication — this only replaces the
+# database. Point DATABASE_URL and ALEMBIC_DATABASE_URL at it:
+#
+#   DATABASE_URL=postgresql+asyncpg://agent_pm:agent_pm@localhost:5433/agent_pm
+#   ALEMBIC_DATABASE_URL=postgresql+asyncpg://agent_pm:agent_pm@localhost:5433/agent_pm
+#
+# Port 5433, not 5432, so this never collides with a Postgres already running
+# on the machine.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: agent-pm-postgres
+    environment:
+      POSTGRES_USER: agent_pm
+      POSTGRES_PASSWORD: agent_pm
+      POSTGRES_DB: agent_pm
+    ports:
+      - '5433:5432'
+    volumes:
+      - agent-pm-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U agent_pm -d agent_pm']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  agent-pm-pgdata:
