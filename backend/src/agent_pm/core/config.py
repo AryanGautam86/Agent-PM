@@ -7,11 +7,12 @@ typed, documented, and validated at start-up rather than at first use.
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, computed_field, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from agent_pm.core.enums import Environment
 
@@ -31,7 +32,14 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
     log_level: str = "INFO"
     log_format: Literal["console", "json"] = "console"
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    # NoDecode is essential. Without it pydantic-settings JSON-decodes any
+    # complex type at the source, *before* validators run — so a value that is
+    # not valid JSON raises SettingsError during import and the process exits
+    # before logging anything useful. Hosting dashboards are full of values
+    # typed as plain text, so this field has to accept them.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["http://localhost:5173"]
+    )
 
     # ---------- Supabase ----------
     supabase_url: str = ""
@@ -106,13 +114,38 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:
-        """Accept both a JSON array and a comma-separated string.
+        """Accept every form somebody might reasonably type.
 
-        Render's dashboard makes JSON awkward to type; both forms work.
+            ["https://a.app","https://b.app"]   JSON array
+            https://a.app,https://b.app         comma separated
+            https://a.app                       a single origin
+            (blank)                             falls back to the default
+
+        A misconfigured CORS value should degrade to the default, never stop
+        the service from booting.
         """
-        if isinstance(value, str) and not value.strip().startswith("["):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+        if not isinstance(value, str):
+            return value
+
+        text = value.strip()
+        if not text:
+            return ["http://localhost:5173"]
+
+        if text.startswith("["):
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError:
+                # Malformed JSON: salvage what looks like origins rather than
+                # crashing the process.
+                text = text.strip("[]")
+            else:
+                return [str(origin).strip() for origin in parsed if str(origin).strip()]
+
+        return [
+            origin.strip().strip('"').strip("'")
+            for origin in text.split(",")
+            if origin.strip().strip('"').strip("'")
+        ]
 
     @field_validator("log_level")
     @classmethod
