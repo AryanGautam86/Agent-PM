@@ -27,7 +27,15 @@ const CODE_LENGTH = 6
 type Stage = 'email' | 'code'
 
 export function LoginPage() {
-  const { status, signInWithGoogle, sendEmailOtp, verifyEmailOtp } = useAuth()
+  const { status, error: authError, signInWithGoogle, sendEmailOtp, verifyEmailOtp } =
+    useAuth()
+
+  // Set once the code has been accepted. Everything after that point is the
+  // app loading your workspace, not the sign-in failing — without this the
+  // form stays live and a second click re-submits a consumed code, which
+  // Supabase rejects as "expired" and blames the user for something that
+  // already worked.
+  const [verified, setVerified] = useState(false)
 
   const [stage, setStage] = useState<Stage>('email')
   const [email, setEmail] = useState('')
@@ -62,6 +70,47 @@ export function LoginPage() {
 
   if (status === 'authenticated') {
     return <Navigate to="/" replace />
+  }
+
+  // The code was accepted but the app has not finished loading. Anything wrong
+  // now is on our side, so say so instead of leaving a form that invites the
+  // user to retry a code that already worked.
+  if (verified) {
+    return (
+      <div className="auth-shell">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <span className="auth-mark" aria-hidden="true">
+              PM
+            </span>
+            <div>
+              <h1>Agent-PM</h1>
+              <p className="muted">Delivery Steward</p>
+            </div>
+          </div>
+
+          {authError ? (
+            <>
+              <p className="alert alert-error" role="alert">
+                Signed in, but the app could not reach its server.
+                <span className="alert-hint">{authError}</span>
+              </p>
+              <Button variant="primary" onClick={() => window.location.reload()} full>
+                Try again
+              </Button>
+            </>
+          ) : (
+            <>
+              <Spinner label="Signed in — loading your workspace" />
+              <p className="muted auth-note">
+                The server may be waking up; this can take up to a minute on the
+                first request.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    )
   }
 
   if (status === 'loading') {
@@ -118,7 +167,10 @@ export function LoginPage() {
   }
 
   function verify() {
-    return run(() => verifyEmailOtp(email.trim().toLowerCase(), code))
+    return run(
+      () => verifyEmailOtp(email.trim().toLowerCase(), code),
+      () => setVerified(true),
+    )
   }
 
   function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
