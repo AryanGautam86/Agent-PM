@@ -1,0 +1,97 @@
+# Render blueprint.
+#
+# Two services from one codebase: the API, and a scheduler worker.
+#
+# The scheduler runs as its own worker rather than inside the web service
+# because the web service may be scaled to more than one instance, and two
+# schedulers would post each standup twice. `SCHEDULER_ENABLED` is therefore
+# false on the web service and true on the worker.
+#
+# Secrets are marked `sync: false` — Render prompts for them on first deploy
+# and never stores them in the repository.
+
+services:
+  - type: web
+    name: agent-pm-api
+    runtime: python
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -e .
+    startCommand: uvicorn agent_pm.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health/live
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: prod
+      - key: DEBUG
+        value: false
+      - key: LOG_FORMAT
+        value: json
+      - key: SCHEDULER_ENABLED
+        value: false
+      # Supabase transaction pooler (port 6543). asyncpg cannot use prepared
+      # statements through the pooler, hence the query parameter.
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # JSON array of allowed origins, e.g. ["https://agent-pm.vercel.app"]
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MEETING_AGENT_WEBHOOK_SECRET
+        sync: false
+      # Optional. Omit any of these and that integration runs on fixtures.
+      - key: JIRA_BASE_URL
+        sync: false
+      - key: JIRA_EMAIL
+        sync: false
+      - key: JIRA_API_TOKEN
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: TEAMS_WEBHOOK_URL
+        sync: false
+
+  - type: worker
+    name: agent-pm-scheduler
+    runtime: python
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install --upgrade pip && pip install -e .
+    startCommand: python -m agent_pm.scheduler.runner
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: prod
+      - key: LOG_FORMAT
+        value: json
+      - key: SCHEDULER_ENABLED
+        value: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: JIRA_BASE_URL
+        sync: false
+      - key: JIRA_EMAIL
+        sync: false
+      - key: JIRA_API_TOKEN
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: TEAMS_WEBHOOK_URL
+        sync: false
