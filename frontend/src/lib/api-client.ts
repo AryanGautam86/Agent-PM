@@ -74,13 +74,20 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
   return url.toString()
 }
 
+/**
+ * Long enough for a sleeping free-tier backend to cold start (~50s), short
+ * enough that a genuinely dead server does not hang the UI forever.
+ */
+const REQUEST_TIMEOUT_MS = 70_000
+
 export async function apiFetch<T>(
   path: string,
   { method = 'GET', body, query, signal }: RequestOptions = {},
 ): Promise<T> {
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   const response = await fetch(buildUrl(path, query), {
     method,
-    signal,
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
     headers: {
       'Content-Type': 'application/json',
       ...(await authHeader()),
